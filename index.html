@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Reacciones Dragon Ball Z</title>
+  <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; overflow-x: hidden; }
+    body {
+      background-color: #141414;
+      color: white;
+      font-family: Arial, sans-serif;
+      position: relative;
+      cursor: url('Cursor_Freezer_32.png') 8 2, auto;
+    }
+    body.modal-active { overflow: hidden !important; }
+    .netflix-container {
+      padding-top: 0;
+      padding-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      min-height: 100vh;
+    }
+    .netflix-header {
+      margin-bottom: 20px;
+    }
+    #siteBanner {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+    }
+    .content-padding {
+      padding-left: 20px;
+      padding-right: 20px;
+    }
+    .netflix-nav { display: flex; justify-content: center; margin-bottom: 15px; }
+    .netflix-nav button { background: none; border: none; color: white; font-weight: bold; cursor: pointer; font-size: 1rem; padding: 5px 10px; }
+    .netflix-nav button.active { border-bottom: 3px solid #e50914; }
+
+    .range-selector-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .range-selector {
+      padding: 8px 12px;
+      font-size: 1rem;
+      border-radius: 5px;
+      border: none;
+      background: #222;
+      color: white;
+      max-width: 300px;
+      width: 90%;
+    }
+
+    .netflix-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      box-sizing: border-box;
+      min-height: 200px;
+    }
+    .netflix-card {
+      background: #222;
+      height: 100px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #999;
+      transition: 0.3s;
+      font-size: 1.1rem;
+      text-align: center;
+      padding: 5px;
+      box-sizing: border-box;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .netflix-card:hover {
+      background: #333;
+      color: white;
+      transform: scale(1.03);
+      box-shadow: 0 0 10px #e50914;
+      cursor: url('Cursor_Freezer_323.png') 8 2, pointer;
+    }
+    .netflix-card.viewed { background: #555; color: #aaa; text-decoration: line-through; opacity: 0.7; cursor: default; }
+
+    .netflix-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 9999;
+      flex-direction: column;
+      box-sizing: border-box;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 10px;
+      overflow: hidden;
+    }
+    .netflix-modal.show { display: flex; }
+
+    .modal-content-area {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        box-sizing: border-box;
+    }
+
+    .modal-header-controls {
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto 15px auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0 10px;
+        box-sizing: border-box;
+        position: relative;
+        flex-shrink: 0;
+        z-index: 10001;
+    }
+    .netflix-video-title {
+      font-size: 1.2rem;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding-right: 40px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-grow: 1;
+    }
+    .netflix-close-modal {
+      position: absolute;
+      top: 50%;
+      right: 0px;
+      transform: translateY(-50%);
+      font-size: 1.8rem;
+      color: white;
+      background: transparent;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      line-height: 30px;
+      text-align: center;
+      border: none;
+      cursor: pointer;
+      z-index: 10002;
+    }
+    .netflix-close-modal:hover { background: rgba(255,0,0,0.7); }
+
+    .video-area-with-nav {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        flex-grow: 1;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .episode-nav-modal-btn {
+        background: rgba(20, 20, 20, 0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 38px;
+        height: 38px;
+        font-size: 1.4rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s, opacity 0.2s;
+        flex-shrink: 0;
+        line-height: 1;
+        z-index: 20;
+        opacity: 0.3;
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    #prevEpisodeBtn { left: 10px; }
+    #nextEpisodeBtn { right: 10px; }
+
+    .video-area-with-nav:hover .episode-nav-modal-btn {
+        opacity: 0.8;
+    }
+    .episode-nav-modal-btn:hover:not(:disabled) {
+        background: rgba(0, 0, 0, 0.7);
+        opacity: 1;
+    }
+    .episode-nav-modal-btn:disabled {
+        opacity: 0.15;
+        cursor: not-allowed;
+    }
+
+    .video-player-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 90vw;
+      max-height: 85vh;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+    }
+    .video-aspect-ratio-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .vjs-player-container {
+      width: 100%;
+      height: 100%;
+      display: none;
+    }
+    .vjs-player-container.player-ready {
+      display: block !important;
+    }
+
+    .video-js .vjs-control-bar,
+    .video-js.vjs-user-inactive .vjs-control-bar {
+        display: flex !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        background-color: rgba(43, 51, 63, 0.85) !important;
+    }
+
+    .message-container { display: flex; align-items: center; justify-content: center; width:100%; height:100%; font-size: 2.5rem; font-weight: bold; color: #ccc; text-align: center; padding: 20px; box-sizing:border-box; position: absolute; top:0; left:0; background: #000;}
+
+    @media (max-width: 768px) {
+      .modal-header-controls { padding: 6px 5px 2px 5px; margin-bottom: 10px; }
+      .netflix-video-title { font-size: 1rem; padding-right: 28px; }
+      .netflix-close-modal { font-size: 1.3rem; width: 24px; height: 24px; line-height: 24px; top: 50%; right: 5px;}
+      .episode-nav-modal-btn { width: 30px; height: 30px; font-size: 1.1rem; }
+      #prevEpisodeBtn { left: 3px; }
+      #nextEpisodeBtn { right: 3px; }
+      .video-player-wrapper { max-width: calc(100% - 70px); }
+      .video-area-with-nav { max-height: calc(100% - 40px); }
+      .range-selector { max-width: 180px; }
+    }
+
+    @media (min-width: 769px) {
+      .content-padding { padding-left: 30px; padding-right: 30px; }
+      .netflix-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; }
+      .netflix-card { height: 110px; font-size: 1.2rem; }
+      .range-selector { max-width: 350px; width: auto; }
+      .episode-nav-modal-btn { width: 40px; height: 40px; font-size: 1.5rem;}
+      #prevEpisodeBtn { left: 10px; }
+      #nextEpisodeBtn { right: 10px; }
+      .netflix-close-modal { top: 50%; right: 10px; font-size: 1.8rem; width: 30px; height: 30px; line-height: 30px; }
+      .netflix-video-title { font-size: 1.3rem; padding-right: 40px; }
+      .modal-content-area { max-width: 95%; }
+      .video-player-wrapper { max-width: calc(100% - 110px); }
+      .video-area-with-nav { max-height: calc(100% - 60px); }
+    }
+
+    @media (min-width: 1024px) {
+      .content-padding { padding-left: 40px; padding-right: 40px; }
+      .netflix-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 20px; }
+      .netflix-card { height: 140px; font-size: 1.5rem; }
+      .netflix-video-title { font-size: 1.5rem; padding-right: 45px; }
+      .netflix-close-modal { top: 50%; right: 15px; font-size: 2.2rem; width: 35px; height: 35px; line-height: 35px; }
+      .message-container { font-size: 3rem; }
+      .range-selector { max-width: 400px; }
+      .episode-nav-modal-btn { width: 45px; height: 45px; font-size: 1.8rem;}
+      #prevEpisodeBtn { left: 15px; }
+      #nextEpisodeBtn { right: 15px; }
+      .video-player-wrapper { max-width: 960px; }
+      .video-area-with-nav { max-height: calc(100vh - 80px); }
+    }
+
+    @media (min-width: 1600px) {
+      .netflix-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+      .netflix-card { height: 160px; }
+      .episode-nav-modal-btn { width: 50px; height: 50px; font-size: 2rem; }
+      #prevEpisodeBtn { left: 20px; }
+      #nextEpisodeBtn { right: 20px; }
+      .video-player-wrapper { max-width: 1100px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="netflix-container">
+  <div class="netflix-header">
+    <img src="mi_banner_dbz.png" alt="Reacciones Dragon Ball Z Banner" id="siteBanner">
+  </div>
+  <div class="content-padding">
+    <div class="netflix-nav"> <button onclick="switchSeason('z')" class="active" type="button">Temporada Z</button> </div>
+    <div class="range-selector-wrapper">
+      <select id="rangeSelector" class="range-selector" aria-label="Seleccionar rango de capítulos"></select>
+    </div>
+    <div class="netflix-grid" id="carousel">CARGANDO EPISODIOS...</div>
+  </div>
+</div>
+
+<div id="videoModal" class="netflix-modal">
+  <div class="modal-content-area">
+    <div class="modal-header-controls">
+      <h2 class="netflix-video-title" id="videoTitleElement">Título del Video</h2>
+      <button class="netflix-close-modal" onclick="closeModal()" type="button" aria-label="Cerrar modal">×</button>
+    </div>
+
+    <div class="video-area-with-nav">
+      <button id="prevEpisodeBtn" class="episode-nav-modal-btn" onclick="changeEpisode(-1)" title="Capítulo Anterior"><</button>
+      <div class="video-player-wrapper" id="videoPlayerWrapperElement" style="display: none;">
+        <div class="video-aspect-ratio-container">
+            <div class="vjs-player-container" id="vjsPlayerWrapper">
+              <video id="myVJSPlayer" class="video-js vjs-default-skin vjs-big-play-centered" controls preload="metadata" playsinline>
+                  <p class="vjs-no-js">JavaScript es necesario para ver este video.</p>
+              </video>
+            </div>
+        </div>
+      </div>
+      <button id="nextEpisodeBtn" class="episode-nav-modal-btn" onclick="changeEpisode(1)" title="Siguiente Capítulo">></button>
+    </div>
+  </div>
+
+  <div class="message-container" id="messageContainerElement" style="display: none;"></div>
+</div>
+
+<script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
+<script>
+  function hideBloggerNavbarStyle() {
+    const css = `#navbar-iframe, #navbar, .navbar { display: none !important; height: 0 !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; } html__{ margin-top: 0px !important; } body { padding-top: 0px !important; margin-top: 0px !important; }`;
+    const head = document.head || document.getElementsByTagName('head')[0];
+    if (!head) { return; }
+    let style = document.getElementById('blogger-navbar-hider');
+    if (!style) {
+      style = document.createElement('style'); style.type = 'text/css'; style.id = 'blogger-navbar-hider';
+      if (style.styleSheet) { style.styleSheet.cssText = css; } else { style.appendChild(document.createTextNode(css)); }
+      head.appendChild(style);
+    }
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', () => { hideBloggerNavbarStyle(); setTimeout(hideBloggerNavbarStyle, 500); });
+  } else { hideBloggerNavbarStyle(); setTimeout(hideBloggerNavbarStyle, 500); }
+
+  const episodeToArchiveOrgURL = {
+    189: "https://archive.org/download/192_20250519/189.mp4",
+    190: "https://archive.org/download/190_20250518/190.mp4",
+    191: "https://archive.org/download/191_20250519/191.mp4",
+    192: "https://archive.org/download/192_20250519/192.mp4",
+    193: "https://archive.org/download/192_20250519/193.mp4",
+    194: "https://archive.org/download/192_20250519/194.mp4",
+    195: "https://archive.org/download/200_20250519/195.mp4",
+    196: "https://archive.org/download/196_20250520/196.mp4",
+    197: "https://archive.org/download/197_20250520/197.mp4",
+    198: "https://archive.org/download/198_20250520/198.mp4",
+    199: "https://archive.org/download/199_20250520/199.mp4",
+    200: "https://archive.org/download/200_20250521/200.mp4",
+    201: "https://archive.org/download/201_20250521/201.mp4",
+    202: "https://archive.org/download/202_20250521/202.mp4",
+    203: "https://archive.org/download/203_20250521/203.mp4",
+    204: "https://archive.org/download/204_20250521/204.mp4",
+    205: "https://archive.org/download/205_20250521/205.mp4",
+    206: "https://archive.org/download/206_20250521/206.mp4",
+    207: "https://archive.org/download/207_20250521/207.mp4",
+    208: "https://archive.org/download/208_20250522/208.mp4",
+    209: "https://archive.org/download/209_20250522/209.mp4",
+    210: "https://archive.org/download/210_20250522/210.mp4"
+  };
+  const zRanges = [[1, 35], [36, 107], [108, 117], [118, 194], [195, 199], [200, 291]];
+  let currentRangeIndex = 0;
+  let vjsPlayer;
+  let activePlayerType = null;
+  let currentEpisodeNumber = null;
+
+  let modal, videoTitleElement, vjsPlayerWrapper, videoPlayerWrapperElement, messageContainerElement, modalContentArea;
+  let carousel, rangeSelector, prevEpisodeBtn, nextEpisodeBtn;
+
+  function initializeDOMElements() {
+    modal = document.getElementById('videoModal');
+    videoTitleElement = document.getElementById('videoTitleElement');
+    vjsPlayerWrapper = document.getElementById('vjsPlayerWrapper');
+    videoPlayerWrapperElement = document.getElementById('videoPlayerWrapperElement');
+    messageContainerElement = document.getElementById('messageContainerElement');
+    modalContentArea = document.querySelector('.modal-content-area');
+    carousel = document.getElementById('carousel');
+    rangeSelector = document.getElementById('rangeSelector');
+    prevEpisodeBtn = document.getElementById('prevEpisodeBtn');
+    nextEpisodeBtn = document.getElementById('nextEpisodeBtn');
+
+    if (!carousel || !rangeSelector || !modal || !videoTitleElement || !vjsPlayerWrapper || !videoPlayerWrapperElement || !messageContainerElement || !prevEpisodeBtn || !nextEpisodeBtn || !modalContentArea ) {
+        if(carousel) carousel.innerHTML = "<p style='color:red; text-align:center;'>Error crítico: Faltan elementos esenciales de la interfaz.</p>";
+        console.error("Error crítico: Uno o más elementos DOM cruciales no se encontraron. La aplicación no funcionará correctamente.");
+        return false;
+    }
+    return true;
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    if (!initializeDOMElements()) {
+        console.error("La inicialización de elementos DOM falló. Deteniendo la ejecución del script principal.");
+        return;
+    }
+
+    rangeSelector.addEventListener('change', () => {
+        currentRangeIndex = parseInt(rangeSelector.value);
+        loadEpisodesForCurrentRange();
+    });
+
+    switchSeason('z');
+    initializeVJSPlayer();
+  });
+
+  function switchSeason(season) {
+    document.querySelectorAll('.netflix-nav button').forEach(btn => btn.classList.remove('active'));
+    const activeButton = document.querySelector(`.netflix-nav button[onclick="switchSeason('${season}')"]`);
+    if (activeButton) activeButton.classList.add('active');
+    loadRangeOptions();
+  }
+
+  function loadRangeOptions() {
+    rangeSelector.innerHTML = '';
+    zRanges.forEach((range, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `Capítulos ${range[0]} - ${range[1]}`;
+      rangeSelector.appendChild(opt);
+    });
+    rangeSelector.value = currentRangeIndex;
+    loadEpisodesForCurrentRange();
+  }
+
+  function loadEpisodesForCurrentRange() {
+    carousel.innerHTML = '';
+    const viewed = JSON.parse(localStorage.getItem('viewedZ') || '{}');
+
+    if (!zRanges[currentRangeIndex]) {
+        carousel.innerHTML = "<p style='color:orange; text-align:center;'>Rango de capítulos no definido.</p>";
+        console.warn("Rango de capítulos no definido para el índice:", currentRangeIndex);
+        return;
+    }
+
+    const [start, end] = zRanges[currentRangeIndex];
+    if (typeof start !== 'number' || typeof end !== 'number' || start > end) {
+        carousel.innerHTML = "<p style='color:red; text-align:center;'>Rango de capítulos inválido.</p>";
+        console.error("Rango de capítulos inválido:", start, end);
+        return;
+    }
+
+    for (let i = start; i <= end; i++) {
+      const card = document.createElement('div');
+      card.className = 'netflix-card';
+      card.textContent = i;
+      if (viewed[i]) {
+        card.classList.add('viewed');
+      }
+      card.onclick = () => openModal(i);
+      carousel.appendChild(card);
+    }
+  }
+
+  function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function initializeVJSPlayer() {
+    const playerElement = document.getElementById('myVJSPlayer');
+    if (playerElement && typeof videojs !== 'undefined') {
+        if (!vjsPlayer || vjsPlayer.isDisposed()) {
+            const options = {
+                controls: true,
+                preload: 'metadata', // Asegura que preload sea metadata
+                fluid: true,
+                autoplay: false,
+                playbackRates: [0.5, 1, 1.25, 1.5, 2],
+                controlBar: {
+                    children: [
+                        'playToggle',
+                        'progressControl',
+                        'currentTimeDisplay',
+                        'timeDivider',
+                        'durationDisplay',
+                        'volumePanel',
+                        'pictureInPictureToggle',
+                        'fullscreenToggle'
+                    ]
+                }
+            };
+            vjsPlayer = videojs(playerElement, options, function onPlayerReady() {
+                this.on('loadedmetadata', function() {
+                    if (messageContainerElement) messageContainerElement.style.display = 'none';
+                    if (videoPlayerWrapperElement) videoPlayerWrapperElement.style.display = 'flex';
+                    if (vjsPlayerWrapper) {
+                        vjsPlayerWrapper.style.display = 'block';
+                        vjsPlayerWrapper.classList.add('player-ready');
+                    }
+                });
+
+                this.on('error', function() {
+                    console.error("Error en el reproductor Video.js:", this.error());
+                    if (videoPlayerWrapperElement) videoPlayerWrapperElement.style.display = 'none';
+                    if (vjsPlayerWrapper) vjsPlayerWrapper.style.display = 'none';
+                    if (messageContainerElement && modalContentArea) {
+                        messageContainerElement.textContent = 'Error al cargar el video. Intenta de nuevo.';
+                        messageContainerElement.style.display = 'flex';
+                    }
+                });
+
+                 this.on('fullscreenchange', function() {
+                    if (isMobileDevice()) {
+                        if (this.isFullscreen()) {
+                            if (screen.orientation && screen.orientation.lock) {
+                                screen.orientation.lock('landscape').catch(err => {});
+                            }
+                        } else {
+                            if (screen.orientation && screen.orientation.unlock) {
+                                screen.orientation.unlock();
+                            }
+                        }
+                    }
+                });
+            });
+        }
+    } else {
+        console.error("Elemento del reproductor no encontrado o Video.js no está cargado.");
+        if (messageContainerElement) {
+            messageContainerElement.textContent = 'Error: Video.js no cargado.';
+            messageContainerElement.style.display = 'flex';
+        }
+    }
+  }
+
+  function openModal(epNum) {
+    if (!modal || !videoTitleElement || !vjsPlayerWrapper || !videoPlayerWrapperElement || !messageContainerElement || !modalContentArea ) {
+        console.error("No se puede abrir el modal: Faltan elementos DOM.");
+        return;
+    }
+     if (!vjsPlayer && typeof videojs !== 'undefined') {
+        initializeVJSPlayer();
+    }
+    if (!vjsPlayer || vjsPlayer.isDisposed()) {
+        console.error("Reproductor Video.js no está disponible o está desechado.");
+        messageContainerElement.textContent = 'Error crítico: El reproductor de video no pudo iniciarse.';
+        messageContainerElement.style.display = 'flex';
+        videoPlayerWrapperElement.style.display = 'none';
+        modalContentArea.style.display = 'flex';
+        modal.classList.add('show');
+        document.body.classList.add('modal-active');
+        return;
+    }
+
+    currentEpisodeNumber = parseInt(epNum);
+    const viewed = JSON.parse(localStorage.getItem('viewedZ') || '{}');
+    if (!viewed[epNum]) {
+      viewed[epNum] = true;
+      localStorage.setItem('viewedZ', JSON.stringify(viewed));
+      if(carousel) {
+          const cardInGrid = Array.from(carousel.children).find(card => parseInt(card.textContent) === epNum);
+          if (cardInGrid) cardInGrid.classList.add('viewed');
+      }
+    }
+
+    modal.classList.add('show');
+    document.body.classList.add('modal-active');
+    modalContentArea.style.display = 'flex';
+
+    vjsPlayer.pause();
+    vjsPlayer.reset();
+
+    videoPlayerWrapperElement.style.display = 'none';
+    vjsPlayerWrapper.style.display = 'none';
+    vjsPlayerWrapper.classList.remove('player-ready');
+    
+    messageContainerElement.textContent = 'Cargando capítulo...';
+    messageContainerElement.style.display = 'flex';
+
+    const videoSrc = episodeToArchiveOrgURL[epNum];
+    videoTitleElement.textContent = `Dragon Ball Z - Capítulo ${epNum}`;
+    updateEpisodeNavButtons();
+
+    if (videoSrc) {
+      activePlayerType = 'archive_vjs';
+      vjsPlayer.src({ type: 'video/mp4', src: videoSrc });
+      vjsPlayer.load(); // Es importante llamar a load() después de cambiar src
+    } else {
+      activePlayerType = null;
+      messageContainerElement.textContent = 'Video no disponible (próximamente).';
+    }
+    window.addEventListener('keydown', handleEscKey);
+  }
+
+  function closeModal() {
+    if(!modal || !modalContentArea) return;
+
+    modal.classList.remove('show');
+    document.body.classList.remove('modal-active');
+
+    if (vjsPlayer && !vjsPlayer.isDisposed()) {
+        vjsPlayer.pause();
+        if (vjsPlayer.isFullscreen()) {
+            vjsPlayer.exitFullscreen();
+        }
+        if (isMobileDevice() && screen.orientation && screen.orientation.unlock) {
+            screen.orientation.unlock();
+        }
+    }
+    activePlayerType = null;
+    currentEpisodeNumber = null;
+    window.removeEventListener('keydown', handleEscKey);
+
+    if (videoPlayerWrapperElement) videoPlayerWrapperElement.style.display = 'none';
+    if (vjsPlayerWrapper) vjsPlayerWrapper.style.display = 'none';
+    if (messageContainerElement) messageContainerElement.style.display = 'none';
+  }
+
+  function updateEpisodeNavButtons() {
+    if (!prevEpisodeBtn || !nextEpisodeBtn || currentEpisodeNumber === null) return;
+    const minEpisode = 1;
+    const maxEpisode = 291;
+
+    let prevEpExists = episodeToArchiveOrgURL.hasOwnProperty((currentEpisodeNumber - 1).toString());
+    prevEpisodeBtn.disabled = (currentEpisodeNumber <= minEpisode || !prevEpExists);
+
+    let nextEpExists = episodeToArchiveOrgURL.hasOwnProperty((currentEpisodeNumber + 1).toString());
+    nextEpisodeBtn.disabled = (currentEpisodeNumber >= maxEpisode || !nextEpExists);
+  }
+
+  function changeEpisode(direction) {
+    if (currentEpisodeNumber === null) return;
+    const newEpisodeNumber = currentEpisodeNumber + direction;
+    if (episodeToArchiveOrgURL.hasOwnProperty(newEpisodeNumber.toString())) {
+        openModal(newEpisodeNumber);
+    }
+  }
+
+  function handleEscKey(event) {
+      if (event.key === 'Escape') {
+          closeModal();
+      } else if (modal.classList.contains('show')) {
+          if (event.key === 'ArrowLeft' && prevEpisodeBtn && !prevEpisodeBtn.disabled) {
+              changeEpisode(-1);
+          } else if (event.key === 'ArrowRight' && nextEpisodeBtn && !nextEpisodeBtn.disabled) {
+              changeEpisode(1);
+          }
+      }
+  }
+</script>
+</body>
+</html>
